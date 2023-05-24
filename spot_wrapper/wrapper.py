@@ -574,6 +574,7 @@ class SpotWrapper:
         use_take_lease: bool = False,
         get_lease_on_action: bool = False,
         continually_try_stand: bool = True,
+        rgb_cameras: bool = True,
     ):
         """
         Args:
@@ -601,6 +602,7 @@ class SpotWrapper:
         self._use_take_lease = use_take_lease
         self._get_lease_on_action = get_lease_on_action
         self._continually_try_stand = continually_try_stand
+        self._rgb_cameras = rgb_cameras
         self._frame_prefix = ""
         if robot_name is not None:
             self._frame_prefix = robot_name + "/"
@@ -663,15 +665,26 @@ class SpotWrapper:
             )
 
         self._camera_image_requests = []
-        for camera_source in CAMERA_IMAGE_SOURCES:
-            self._camera_image_requests.append(
-                build_image_request(
-                    camera_source,
-                    image_format=image_pb2.Image.FORMAT_JPEG,
-                    pixel_format=image_pb2.Image.PIXEL_FORMAT_RGB_U8,
-                    quality_percent=50,
+
+        if self._rgb_cameras:
+            for camera_source in CAMERA_IMAGE_SOURCES:
+                self._camera_image_requests.append(
+                    build_image_request(
+                        camera_source,
+                        image_format=image_pb2.Image.FORMAT_JPEG,
+                        pixel_format=image_pb2.Image.PIXEL_FORMAT_RGB_U8,
+                        quality_percent=50,
+                    )
                 )
-            )
+        else:
+            for camera_source in CAMERA_IMAGE_SOURCES:
+                self._camera_image_requests.append(
+                    build_image_request(
+                        camera_source,
+                        image_format=image_pb2.Image.FORMAT_JPEG,
+                        quality_percent=50,
+                    )
+                )
 
         self._depth_image_requests = []
         for camera_source in DEPTH_IMAGE_SOURCES:
@@ -794,22 +807,43 @@ class SpotWrapper:
                 self._image_requests_by_camera[camera] = {}
                 image_types = IMAGE_SOURCES_BY_CAMERA[camera]
                 for image_type in image_types:
+                    source = IMAGE_SOURCES_BY_CAMERA[camera][image_type]
+
                     if image_type.startswith("depth"):
                         image_format = image_pb2.Image.FORMAT_RAW
                         pixel_format = image_pb2.Image.PIXEL_FORMAT_DEPTH_U16
-                    else:
-                        image_format = image_pb2.Image.FORMAT_JPEG
-                        pixel_format = image_pb2.Image.PIXEL_FORMAT_RGB_U8
 
-                    source = IMAGE_SOURCES_BY_CAMERA[camera][image_type]
-                    self._image_requests_by_camera[camera][
-                        image_type
-                    ] = build_image_request(
-                        source,
-                        image_format=image_format,
-                        pixel_format=pixel_format,
-                        quality_percent=75,
-                    )
+                        self._image_requests_by_camera[camera][
+                            image_type
+                        ] = build_image_request(
+                            source,
+                            image_format=image_format,
+                            pixel_format=pixel_format,
+                            quality_percent=75,
+                        )
+                    else:
+                        if self._rgb_cameras:
+                            image_format = image_pb2.Image.FORMAT_JPEG
+                            pixel_format = image_pb2.Image.PIXEL_FORMAT_RGB_U8
+
+                            self._image_requests_by_camera[camera][
+                                image_type
+                            ] = build_image_request(
+                                source,
+                                image_format=image_format,
+                                pixel_format=pixel_format,
+                                quality_percent=75,
+                            )
+                        else:
+                            image_format = image_pb2.Image.FORMAT_JPEG
+
+                            self._image_requests_by_camera[camera][
+                                image_type
+                            ] = build_image_request(
+                                source,
+                                image_format=image_format,
+                                quality_percent=75,
+                            )
 
             # Store the most recent knowledge of the state of the robot based on rpc calls.
             self._current_graph = None
