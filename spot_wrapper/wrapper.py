@@ -671,7 +671,9 @@ class SpotWrapper:
                 build_image_request(
                     camera_source,
                     image_format=image_pb2.Image.FORMAT_JPEG,
-                    pixel_format=image_pb2.Image.PIXEL_FORMAT_RGB_U8 if self._rgb_cameras else image_pb2.Image.PIXEL_FORMAT_GREYSCALE_U8,
+                    pixel_format=image_pb2.Image.PIXEL_FORMAT_RGB_U8
+                    if self._rgb_cameras
+                    else image_pb2.Image.PIXEL_FORMAT_GREYSCALE_U8,
                     quality_percent=50,
                 )
             )
@@ -805,7 +807,9 @@ class SpotWrapper:
                         if camera == "hand" or self._rgb_cameras:
                             pixel_format = image_pb2.Image.PIXEL_FORMAT_RGB_U8
                         elif camera != "hand":
-                            self._logger.info(f"Switching {camera}:{image_type} to greyscale image format.")
+                            self._logger.info(
+                                f"Switching {camera}:{image_type} to greyscale image format."
+                            )
                             pixel_format = image_pb2.Image.PIXEL_FORMAT_GREYSCALE_U8
 
                     source = IMAGE_SOURCES_BY_CAMERA[camera][image_type]
@@ -1716,7 +1720,7 @@ class SpotWrapper:
                 )
                 time_to_goal: Duration = joint_move_feedback.time_to_goal
                 time_to_goal_in_seconds: float = time_to_goal.seconds + (
-                    float(time_to_goal.nanos) / float(10**9)
+                    float(time_to_goal.nanos) / float(10 ** 9)
                 )
                 time.sleep(time_to_goal_in_seconds)
                 return True, "Spot Arm moved successfully"
